@@ -1,5 +1,13 @@
 package main
 
+// The underscore tells Go that you're importing it for its side effects, not because you need to use it.
+import (
+	"bootDevGoRss/internal/database"
+	"database/sql"
+
+	_ "github.com/lib/pq"
+)
+
 import (
 	"bootDevGoRss/internal/config"
 	"fmt"
@@ -17,14 +25,31 @@ func main() {
 	}
 	fmt.Println(configData)
 
-	stateData := state{
-		configData: &configData,
+	db, err := sql.Open("postgres", configData.DbUrl)
+	if err != nil {
+		log.Fatalf("Error connect to database %v", err)
 	}
+	dbQueries := database.New(db)
+
+	stateData := state{
+		configData:    &configData,
+		dbQueriesData: dbQueries,
+	}
+
 	commandsData := commands{
 		mapper: make(map[string]func(*state, command) error),
 	}
 	if err := commandsData.register("login", handlerLogin); err != nil {
-		panic(err)
+		log.Fatalf("error in login command: %v", err)
+	}
+	if err := commandsData.register("register", handlerRegister); err != nil {
+		log.Fatalf("error in register command: %v", err)
+	}
+	if err := commandsData.register("reset", handlerDelete); err != nil {
+		log.Fatalf("error in reset command: %v", err)
+	}
+	if err := commandsData.register("users", handlerGetUsers); err != nil {
+		log.Fatalf("error in users command: %v", err)
 	}
 
 	// Why two? The first argument is automatically the program name, which we ignore, and we require a command name.

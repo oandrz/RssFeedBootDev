@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 )
 
@@ -18,14 +17,12 @@ func Read() (Config, error) {
 	configFilePath, err := getConfigFilePath()
 	data, err := os.ReadFile(configFilePath)
 	if err != nil {
-		log.Printf("cannot unmarshal config file: %v", err)
-		return Config{}, err
+		return Config{}, fmt.Errorf("cannot unmarshal config file: %v", err)
 	}
 
 	var config Config
 	if err := json.Unmarshal(data, &config); err != nil {
-		log.Printf("cannot unmarshal config file: %v", err)
-		return Config{}, err
+		return Config{}, fmt.Errorf("cannot unmarshal config file: %v", err)
 	}
 
 	return config, nil
