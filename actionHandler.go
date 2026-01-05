@@ -3,6 +3,7 @@ package main
 import (
 	"bootDevGoRss/internal/database"
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -90,5 +91,32 @@ func handlerAggCommand(state *state, cmd command) error {
 		return err
 	}
 	fmt.Println(feeds)
+	return nil
+}
+
+func handlerAddFeed(state *state, cmd command) error {
+	if len(cmd.args) < 2 {
+		return errors.New("feed name and url argument is required")
+	}
+
+	user, err := state.dbQueriesData.GetUser(context.Background(), state.configData.CurrentUser)
+	if err != nil {
+		return fmt.Errorf("error on handler add feed: %v", err)
+	}
+
+	feedName := cmd.args[0]
+	feedUrl := cmd.args[1]
+
+	feed, err := state.dbQueriesData.CreateFeed(context.Background(), database.CreateFeedParams{
+		Name:   sql.NullString{String: feedName, Valid: true},
+		Url:    sql.NullString{String: feedUrl, Valid: true},
+		UserID: user.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("error on handler add feed: %v", err)
+	}
+
+	fmt.Printf("Feed %s and url: %s successfully added\n", feed.Name, feed.Url)
+
 	return nil
 }
