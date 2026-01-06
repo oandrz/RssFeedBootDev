@@ -58,6 +58,9 @@ func main() {
 	if err := commandsData.register("feeds", handlerFeeds); err != nil {
 		log.Fatalf("error in feeds command: %v", err)
 	}
+	if err := commandsData.register("follow", handlerFollow); err != nil {
+		log.Fatalf("error in follow command: %v", err)
+	}
 
 	// Why two? The first argument is automatically the program name, which we ignore, and we require a command name.
 	if len(os.Args) < 2 {

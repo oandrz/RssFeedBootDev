@@ -107,6 +107,7 @@ func handlerAddFeed(state *state, cmd command) error {
 	feedUrl := cmd.args[1]
 
 	feed, err := state.dbQueriesData.CreateFeed(context.Background(), database.CreateFeedParams{
+		ID:     uuid.New(),
 		Name:   feedName,
 		Url:    feedUrl,
 		UserID: user.ID,
@@ -133,6 +134,37 @@ func handlerFeeds(state *state, cmd command) error {
 		fmt.Printf("Feed Title: %s\nFeed Url: %s\n", feed.Name, feed.Url)
 		fmt.Printf("Created by %s\n", user.Name)
 	}
+
+	return nil
+}
+
+func handlerFollow(state *state, cmd command) error {
+	if len(cmd.args) != 1 {
+		return errors.New("url argument is required")
+	}
+
+	user, err := state.dbQueriesData.GetUser(context.Background(), state.configData.CurrentUser)
+	if err != nil {
+		return fmt.Errorf("error on handler follow get user: %v", err)
+	}
+
+	feed, err := state.dbQueriesData.GetFeedByUrl(context.Background(), cmd.args[0])
+	if err != nil {
+		return fmt.Errorf("error on handler follow get feed by url: %v", err)
+	}
+
+	feedFollow, err := state.dbQueriesData.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		FeedID:    feed.ID,
+		UserID:    user.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("error on handler follow create feed follow: %v", err)
+	}
+
+	fmt.Printf("Feed %s successfully followed by %s", feedFollow.FeedName, feedFollow.UserName)
 
 	return nil
 }
