@@ -6,3 +6,6 @@ VALUES (
    $3
 )
 RETURNING *;
+
+-- name: GetFeeds :many
+select * from feeds;

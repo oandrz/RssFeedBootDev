@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE feeds (
-   name text,
-   url text unique,
+   name text not null,
+   url text unique not null,
    user_id uuid not null,
    foreign key (user_id) references users(id) on delete cascade
 );

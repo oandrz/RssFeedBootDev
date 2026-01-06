@@ -3,7 +3,6 @@ package main
 import (
 	"bootDevGoRss/internal/database"
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -101,15 +100,15 @@ func handlerAddFeed(state *state, cmd command) error {
 
 	user, err := state.dbQueriesData.GetUser(context.Background(), state.configData.CurrentUser)
 	if err != nil {
-		return fmt.Errorf("error on handler add feed: %v", err)
+		return fmt.Errorf("error on handler add feed get user: %v", err)
 	}
 
 	feedName := cmd.args[0]
 	feedUrl := cmd.args[1]
 
 	feed, err := state.dbQueriesData.CreateFeed(context.Background(), database.CreateFeedParams{
-		Name:   sql.NullString{String: feedName, Valid: true},
-		Url:    sql.NullString{String: feedUrl, Valid: true},
+		Name:   feedName,
+		Url:    feedUrl,
 		UserID: user.ID,
 	})
 	if err != nil {
@@ -117,6 +116,23 @@ func handlerAddFeed(state *state, cmd command) error {
 	}
 
 	fmt.Printf("Feed %s and url: %s successfully added\n", feed.Name, feed.Url)
+
+	return nil
+}
+
+func handlerFeeds(state *state, cmd command) error {
+	feeds, err := state.dbQueriesData.GetFeeds(context.Background())
+	if err != nil {
+		return fmt.Errorf("error on handler feeds: %v", err)
+	}
+	for _, feed := range feeds {
+		user, err := state.dbQueriesData.GetUserById(context.Background(), feed.UserID)
+		if err != nil {
+			return fmt.Errorf("error on handler feeds: %v", err)
+		}
+		fmt.Printf("Feed Title: %s\nFeed Url: %s\n", feed.Name, feed.Url)
+		fmt.Printf("Created by %s\n", user.Name)
+	}
 
 	return nil
 }

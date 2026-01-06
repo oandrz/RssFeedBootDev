@@ -10,7 +10,6 @@ import (
 
 import (
 	"bootDevGoRss/internal/config"
-	"fmt"
 	"log"
 	"os"
 )
@@ -23,7 +22,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(configData)
 
 	db, err := sql.Open("postgres", configData.DbUrl)
 	if err != nil {
@@ -57,6 +55,9 @@ func main() {
 	if err := commandsData.register("addfeed", handlerAddFeed); err != nil {
 		log.Fatalf("error in addfeed command: %v", err)
 	}
+	if err := commandsData.register("feeds", handlerFeeds); err != nil {
+		log.Fatalf("error in feeds command: %v", err)
+	}
 
 	// Why two? The first argument is automatically the program name, which we ignore, and we require a command name.
 	if len(os.Args) < 2 {
@@ -73,6 +74,4 @@ func main() {
 	if err := commandsData.run(&stateData, commandData); err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println(configData)
 }
