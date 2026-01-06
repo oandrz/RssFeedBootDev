@@ -116,6 +116,11 @@ func handlerAddFeed(state *state, cmd command) error {
 		return fmt.Errorf("error on handler add feed: %v", err)
 	}
 
+	err = handlerFollow(state, command{command: "follow", args: []string{feedUrl}})
+	if err != nil {
+		return fmt.Errorf("error on handler add feed when follow: %v", err)
+	}
+
 	fmt.Printf("Feed %s and url: %s successfully added\n", feed.Name, feed.Url)
 
 	return nil
@@ -164,7 +169,26 @@ func handlerFollow(state *state, cmd command) error {
 		return fmt.Errorf("error on handler follow create feed follow: %v", err)
 	}
 
-	fmt.Printf("Feed %s successfully followed by %s", feedFollow.FeedName, feedFollow.UserName)
+	fmt.Printf("Feed %s successfully followed by %s\n", feedFollow.FeedName, feedFollow.UserName)
+
+	return nil
+}
+
+func handlerFollowing(state *state, cmd command) error {
+	user, err := state.dbQueriesData.GetUser(context.Background(), state.configData.CurrentUser)
+	if err != nil {
+		return fmt.Errorf("error on handler following get user: %v", err)
+	}
+
+	feedFollows, err := state.dbQueriesData.GetFeedFollowsForUser(context.Background(), user.ID)
+	if err != nil {
+		return fmt.Errorf("error on handler following get feed follows for user: %v", err)
+	}
+
+	fmt.Println("Feed followed by user:")
+	for idx, feedFollow := range feedFollows {
+		fmt.Printf("%d Feed Title: %s\nFeed Url: %s\n", idx+1, feedFollow.FeedName, feedFollow.FeedUrl)
+	}
 
 	return nil
 }

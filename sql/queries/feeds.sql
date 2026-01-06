@@ -33,3 +33,12 @@ from inserted_feed_follow
 
 -- name: GetFeedByUrl :one
 select * from feeds where url = $1;
+
+-- name: GetFeedFollowsForUser :many
+select
+    feed_follows.feed_id,
+    feed_follows.user_id,
+    feeds.name as feed_name,
+    feeds.url as feed_url
+from feed_follows
+    inner join feeds on feeds.id = feed_follows.feed_id where feed_follows.user_id = $1;

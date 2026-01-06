@@ -123,6 +123,51 @@ func (q *Queries) GetFeedByUrl(ctx context.Context, url string) (Feed, error) {
 	return i, err
 }
 
+const getFeedFollowsForUser = `-- name: GetFeedFollowsForUser :many
+select
+    feed_follows.feed_id,
+    feed_follows.user_id,
+    feeds.name as feed_name,
+    feeds.url as feed_url
+from feed_follows
+    inner join feeds on feeds.id = feed_follows.feed_id where feed_follows.user_id = $1
+`
+
+type GetFeedFollowsForUserRow struct {
+	FeedID   uuid.UUID
+	UserID   uuid.UUID
+	FeedName string
+	FeedUrl  string
+}
+
+func (q *Queries) GetFeedFollowsForUser(ctx context.Context, userID uuid.UUID) ([]GetFeedFollowsForUserRow, error) {
+	rows, err := q.db.QueryContext(ctx, getFeedFollowsForUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFeedFollowsForUserRow
+	for rows.Next() {
+		var i GetFeedFollowsForUserRow
+		if err := rows.Scan(
+			&i.FeedID,
+			&i.UserID,
+			&i.FeedName,
+			&i.FeedUrl,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getFeeds = `-- name: GetFeeds :many
 select id, name, url, user_id from feeds
 `
