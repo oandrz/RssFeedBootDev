@@ -52,16 +52,16 @@ func main() {
 	if err := commandsData.register("agg", handlerAggCommand); err != nil {
 		log.Fatalf("error in agg command: %v", err)
 	}
-	if err := commandsData.register("addfeed", handlerAddFeed); err != nil {
+	if err := commandsData.register("addfeed", middlewareLoggedIn(handlerAddFeed)); err != nil {
 		log.Fatalf("error in addfeed command: %v", err)
 	}
 	if err := commandsData.register("feeds", handlerFeeds); err != nil {
 		log.Fatalf("error in feeds command: %v", err)
 	}
-	if err := commandsData.register("follow", handlerFollow); err != nil {
+	if err := commandsData.register("follow", middlewareLoggedIn(handlerFollow)); err != nil {
 		log.Fatalf("error in follow command: %v", err)
 	}
-	if err := commandsData.register("following", handlerFollowing); err != nil {
+	if err := commandsData.register("following", middlewareLoggedIn(handlerFollowing)); err != nil {
 		log.Fatalf("error in following command: %v", err)
 	}
 

@@ -93,7 +93,7 @@ func handlerAggCommand(state *state, cmd command) error {
 	return nil
 }
 
-func handlerAddFeed(state *state, cmd command) error {
+func handlerAddFeed(state *state, cmd command, user database.User) error {
 	if len(cmd.args) < 2 {
 		return errors.New("feed name and url argument is required")
 	}
@@ -116,7 +116,7 @@ func handlerAddFeed(state *state, cmd command) error {
 		return fmt.Errorf("error on handler add feed: %v", err)
 	}
 
-	err = handlerFollow(state, command{command: "follow", args: []string{feedUrl}})
+	err = handlerFollow(state, command{command: "follow", args: []string{feedUrl}}, user)
 	if err != nil {
 		return fmt.Errorf("error on handler add feed when follow: %v", err)
 	}
@@ -143,7 +143,7 @@ func handlerFeeds(state *state, cmd command) error {
 	return nil
 }
 
-func handlerFollow(state *state, cmd command) error {
+func handlerFollow(state *state, cmd command, user database.User) error {
 	if len(cmd.args) != 1 {
 		return errors.New("url argument is required")
 	}
@@ -174,7 +174,7 @@ func handlerFollow(state *state, cmd command) error {
 	return nil
 }
 
-func handlerFollowing(state *state, cmd command) error {
+func handlerFollowing(state *state, cmd command, user database.User) error {
 	user, err := state.dbQueriesData.GetUser(context.Background(), state.configData.CurrentUser)
 	if err != nil {
 		return fmt.Errorf("error on handler following get user: %v", err)
@@ -191,4 +191,15 @@ func handlerFollowing(state *state, cmd command) error {
 	}
 
 	return nil
+}
+
+func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error {
+	return func(s *state, c command) error {
+		user, err := s.dbQueriesData.GetUser(context.Background(), s.configData.CurrentUser)
+		if err != nil {
+			return fmt.Errorf("error on handler following get user: %v", err)
+		}
+
+		return handler(s, c, user)
+	}
 }
