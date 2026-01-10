@@ -1,12 +1,19 @@
 -- name: CreateFeed :one
-INSERT INTO feeds (id, name, url, user_id)
+INSERT INTO feeds (id, name, url, last_fetched_at, user_id)
 VALUES (
         $1,
    $2,
    $3,
-   $4
+        $4,
+   $5
 )
 RETURNING *;
+
+-- name: MarkFeedFetched :exec
+update feeds set last_fetched_at = $1 where feeds.url = $2;
+
+-- name: GetNextFeedToFetched :one
+select * from feeds order by last_fetched_at asc nulls first limit 1;
 
 -- name: GetFeeds :many
 select * from feeds;

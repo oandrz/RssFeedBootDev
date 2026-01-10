@@ -3,6 +3,7 @@ package main
 import (
 	"bootDevGoRss/internal/database"
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -85,11 +86,52 @@ func handlerGetUsers(state *state, cmd command) error {
 const hardCodedUrl = "https://www.wagslane.dev/index.xml"
 
 func handlerAggCommand(state *state, cmd command) error {
-	feeds, err := fetchFeed(context.Background(), hardCodedUrl)
-	if err != nil {
-		return err
+	if len(cmd.args) < 1 {
+		return errors.New("agg command needs time between request")
 	}
-	fmt.Println(feeds)
+
+	timeParam := cmd.args[0]
+	timeBetweenRequests, err := time.ParseDuration(timeParam)
+	ticker := time.NewTicker(timeBetweenRequests)
+
+	// channel, blocked until got the c channel emit the item
+	for ; ; <-ticker.C {
+		fmt.Printf("Collecting feeds every 1m0s")
+
+		err = scrapeFeeds(state)
+		if err != nil {
+			return errors.New("error scrape feeds")
+		}
+	}
+}
+
+func scrapeFeeds(state *state) error {
+	nextFeed, err := state.dbQueriesData.GetNextFeedToFetched(context.Background())
+	if err != nil {
+		return fmt.Errorf("error when scrape feed when get next feed %v", err)
+	}
+
+	err = state.dbQueriesData.MarkFeedFetched(context.Background(), database.MarkFeedFetchedParams{
+		LastFetchedAt: sql.NullTime{
+			Time:  time.Now(),
+			Valid: true, // true means the value is not NULL
+		},
+		Url: nextFeed.Url,
+	})
+	if err != nil {
+		return fmt.Errorf("error when scrape feed on mark feed fetched %v", err)
+	}
+
+	feeds, err := fetchFeed(context.Background(), nextFeed.Url)
+	if err != nil {
+		return fmt.Errorf("error when scrape feed on fetch feed fetched %v", err)
+	}
+
+	fmt.Printf("Title for feed %s\n", feeds.Channel.Title)
+	for _, item := range feeds.Channel.Item {
+		fmt.Printf("title: %s\n", item.Title)
+	}
+
 	return nil
 }
 

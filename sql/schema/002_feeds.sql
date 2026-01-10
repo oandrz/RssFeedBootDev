@@ -3,6 +3,7 @@ CREATE TABLE feeds (
    id uuid Primary Key,
    name text not null,
    url text unique not null,
+   last_fetched_at timestamp,
    user_id uuid not null,
    foreign key (user_id) references users(id) on delete cascade
 );
