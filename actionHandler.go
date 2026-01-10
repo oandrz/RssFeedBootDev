@@ -203,3 +203,24 @@ func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) 
 		return handler(s, c, user)
 	}
 }
+
+func handlerUnFollow(state *state, cmd command, user database.User) error {
+	if len(cmd.args) != 1 {
+		return errors.New("url argument is required")
+	}
+
+	feed, err := state.dbQueriesData.GetFeedByUrl(context.Background(), cmd.args[0])
+	if err != nil {
+		return fmt.Errorf("error on handler unfollow get feed by url: %v", err)
+	}
+
+	err = state.dbQueriesData.DeleteFollow(context.Background(), database.DeleteFollowParams{
+		UserID: user.ID,
+		FeedID: feed.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("error on handler unfollow delete follow: %v", err)
+	}
+
+	return nil
+}
