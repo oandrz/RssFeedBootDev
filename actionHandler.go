@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -100,7 +101,7 @@ func handlerAggCommand(state *state, cmd command) error {
 
 		err = scrapeFeeds(state)
 		if err != nil {
-			return errors.New("error scrape feeds")
+			return err
 		}
 	}
 }
@@ -128,8 +129,27 @@ func scrapeFeeds(state *state) error {
 	}
 
 	fmt.Printf("Title for feed %s\n", feeds.Channel.Title)
-	for _, item := range feeds.Channel.Item {
+	for idx, item := range feeds.Channel.Item {
 		fmt.Printf("title: %s\n", item.Title)
+
+		publishedTime, err := time.Parse(time.RFC1123Z, item.PubDate)
+		if err != nil {
+			return fmt.Errorf("error when scrape feed on published time  %v", err)
+		}
+
+		err = state.dbQueriesData.CreatePost(context.Background(), database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			Title:       item.Title,
+			Url:         item.Link,
+			Description: item.Description,
+			PublishedAt: publishedTime,
+			FeedID:      nextFeed.ID,
+		})
+		if err != nil {
+			return fmt.Errorf("error when scrape feed on create post index %d: %v", idx, err)
+		}
 	}
 
 	return nil
@@ -262,6 +282,31 @@ func handlerUnFollow(state *state, cmd command, user database.User) error {
 	})
 	if err != nil {
 		return fmt.Errorf("error on handler unfollow delete follow: %v", err)
+	}
+
+	return nil
+}
+
+func handlerBrowse(state *state, cmd command) error {
+	var limit int
+	if len(cmd.args) < 1 {
+		limit = 2
+	} else {
+		converted, err := strconv.Atoi(cmd.args[0])
+		limit = converted
+		if err != nil {
+			return fmt.Errorf("error on handler browse on convert: %v", err)
+		}
+	}
+
+	posts, err := state.dbQueriesData.GetPosts(context.Background(), int32(limit))
+	if err != nil {
+		return fmt.Errorf("error on handler browse on get post: %v", err)
+	}
+
+	for _, item := range posts {
+		fmt.Printf("The title of the post %s\n", item.Title)
+		fmt.Printf("Published at %s\n", item.PublishedAt)
 	}
 
 	return nil
